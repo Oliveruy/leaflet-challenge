@@ -7,6 +7,10 @@ document.addEventListener('DOMContentLoaded', function() {
       attribution: '© OpenStreetMap contributors'
     }).addTo(map);
   
+    // Layer groups for earthquakes and tectonic plates
+    const earthquakes = new L.LayerGroup();
+    const tectonicPlates = new L.LayerGroup(); // Define tectonicPlates layer group
+  
     // Fetch the earthquake data
     const url = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_week.geojson";
     d3.json(url).then(data => {
@@ -37,7 +41,22 @@ document.addEventListener('DOMContentLoaded', function() {
         onEachFeature: function(feature, layer) {
           layer.bindPopup(`<h3>${feature.properties.place}</h3><hr><p>Magnitude: ${feature.properties.mag}</p><p>Depth: ${feature.geometry.coordinates[2]} km</p><p>${new Date(feature.properties.time)}</p>`);
         }
-      }).addTo(map);
+      }).addTo(earthquakes);
+  
+      earthquakes.addTo(map);
+
+      // Fetch the tectonic plate data
+      const tectonicPlateUrl = "https://raw.githubusercontent.com/fraxen/tectonicplates/master/GeoJSON/PB2002_boundaries.json";
+      d3.json(tectonicPlateUrl).then(data => {
+        // Create layer for tectonic plates
+        L.geoJSON(data, {
+          style: {
+            color: "orange",
+            weight: 2
+          }
+        }).addTo(tectonicPlates);
+        tectonicPlates.addTo(map); // Add tectonic plates layer to the map
+      });
   
       // Add a legend
       const legend = L.control({position: 'bottomright'});
@@ -45,7 +64,6 @@ document.addEventListener('DOMContentLoaded', function() {
       legend.onAdd = function(map) {
         const div = L.DomUtil.create('div', 'legend');
         const depths = [-10, 10, 30, 50, 70, 90];
-        const labels = [];
   
         div.innerHTML = '<h4>Earthquake Depth</h4>';
         for (let i = 0; i < depths.length; i++) {
@@ -57,5 +75,18 @@ document.addEventListener('DOMContentLoaded', function() {
       };
   
       legend.addTo(map);
+          // Tectonic plates legend
+    const plateLegend = L.control({ position: 'topright' });
+
+    plateLegend.onAdd = function(map) {
+        const div = L.DomUtil.create('div', 'legend');
+        div.innerHTML = '<h4>Tectonic Plates</h4><i style="background: orange; width: 18px; height: 18px; display: inline-block;"></i> Tectonic Plates';
+        return div;
+    };
+
+    // Append the tectonic plates legend to the top right legend div
+    plateLegend.addTo(map);
+    plateLegend.getContainer().classList.add('legend-top-right'); 
+
     });
-  });  
+});
